@@ -358,13 +358,14 @@ func isGetDataType(data interface{}) bool {
 //
 // https://docs.aliyun.com/#/pub/oss/api-reference/error-response
 type Error struct {
-	Code, Message string
-	RequestId     string
-	HostId        string
+	Code      string
+	RequestId string
+	HostId    string
+	Message   string
 }
 
 func (e Error) Error() string {
-	return fmt.Sprintf("Code: %s, Message: %s, RequestId: %s, HostId: %s", e.Code, e.Message, e.RequestId, e.HostId)
+	return fmt.Sprintf("Code: %s, RequestId: %s, HostId: %s, Message: %s", e.Code, e.RequestId, e.HostId, e.Message)
 }
 
 // Owner contains the information of the bucket owner.
