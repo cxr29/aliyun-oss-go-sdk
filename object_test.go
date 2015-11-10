@@ -56,6 +56,45 @@ func TestObject(t *testing.T) {
 	fatal(t, o.Bucket.Delete())
 }
 
+func TestObjectRange(t *testing.T) {
+	o := newObject()
+
+	fatal(t, o.Bucket.Put())
+
+	etag, err := o.Put([]byte(HelloWorld))
+	fatal(t, err)
+	if etag == "" {
+		t.Fatal("expected ETag")
+	}
+
+	var v []byte
+
+	var first, length int64 = 0, 100
+	for {
+		var b []byte
+		rl, il, err := o.Range(first, length, &b)
+		fatal(t, err)
+		v = append(v, b...)
+		first += rl
+		if first == il {
+			break
+		} else if first > il || length == 0 {
+			panic("somthing wrong")
+		}
+		if first+length > il { // last range
+			length = 0
+		}
+	}
+
+	if HelloWorld != string(v) {
+		t.Fatal("expected HelloWorld")
+	}
+
+	fatal(t, o.Delete())
+
+	fatal(t, o.Bucket.Delete())
+}
+
 func TestObjectFile(t *testing.T) {
 	o := newObject()
 

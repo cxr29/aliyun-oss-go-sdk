@@ -3,6 +3,7 @@ Aliyun OSS Go SDK
 ### Feature
 - All OSS API
 - Multipart Upload
+- Range Get
 - Full Tested
 - Simple and Easy to use
 - ...

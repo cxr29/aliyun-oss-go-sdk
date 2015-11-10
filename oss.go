@@ -68,56 +68,91 @@ func GetDomain(location string, internal bool) (domain string) {
 //
 // Content-Encoding deflate and gzip are supported.
 func ReadBody(res *http.Response, v interface{}) error {
+	err := newBody(res)
 	defer res.Body.Close()
-
-	var rc io.ReadCloser
-	var err error
-
-	switch res.Header.Get("Content-Encoding") {
-	case "deflate":
-		rc = flate.NewReader(res.Body)
-		defer rc.Close()
-	case "gzip":
-		rc, err = gzip.NewReader(res.Body)
-		if err != nil {
-			return err
-		}
-		defer rc.Close()
-	default:
-		rc = res.Body
+	if err == nil {
+		err = readError(res)
 	}
+	if err == nil {
+		_, err = readBody(res.Body, v)
+	}
+	return err
+}
 
+func readBody(r io.Reader, v interface{}) (int64, error) {
+	switch i := v.(type) {
+	case nil:
+		return 0, nil
+	case *[]byte:
+		b, err := ioutil.ReadAll(r)
+		if err != nil {
+			return 0, err
+		}
+		*i = b
+		return int64(len(b)), nil
+	case *os.File:
+		return io.Copy(i, r)
+	case *bytes.Buffer:
+		return i.ReadFrom(r)
+	}
+	b, err := ioutil.ReadAll(r)
+	if err != nil {
+		return 0, err
+	}
+	return int64(len(b)), xml.Unmarshal(b, v)
+}
+
+type body struct {
+	rc, ce io.ReadCloser
+}
+
+func (b *body) Read(p []byte) (n int, err error) {
+	if b.ce != nil {
+		return b.ce.Read(p)
+	}
+	return b.rc.Read(p)
+}
+
+func (b *body) Close() error {
+	err := b.rc.Close()
+	if b.ce != nil {
+		if e := b.ce.Close(); err == nil {
+			return e
+		}
+	}
+	return err
+}
+
+func newBody(res *http.Response) (err error) {
+	var ce io.ReadCloser
+	switch strings.ToLower(strings.TrimSpace(res.Header.Get("Content-Encoding"))) {
+	case "deflate":
+		ce = flate.NewReader(res.Body)
+	case "gzip":
+		ce, err = gzip.NewReader(res.Body)
+	}
+	if ce != nil {
+		res.Body = &body{rc: res.Body, ce: ce}
+	}
+	return
+}
+
+func readError(res *http.Response) error {
 	switch res.StatusCode / 100 {
 	case 3, 4, 5: // 7
-		b, err := ioutil.ReadAll(rc)
+		b, err := ioutil.ReadAll(res.Body)
 		if err != nil {
 			return err
 		}
 		var e Error
-		if len(b) > 0 { // no content
-			err = xml.Unmarshal(b, &e)
-			if err != nil {
-				return err
-			}
-		} else {
+		if len(b) == 0 {
 			e.Code = res.Status
+		} else if err = xml.Unmarshal(b, &e); err != nil {
+			return err
 		}
 		return e
 	}
-
-	switch i := v.(type) {
-	case nil:
-	case *[]byte:
-		*i, err = ioutil.ReadAll(rc)
-	case *os.File:
-		_, err = io.Copy(i, rc)
-	case *bytes.Buffer:
-		_, err = i.ReadFrom(rc)
-	default:
-		err = xml.NewDecoder(rc).Decode(v)
-	}
-
-	return err
+	return nil
 }
 
 type dict [][2]string

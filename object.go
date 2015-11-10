@@ -143,6 +143,68 @@ func (o Object) Get(data interface{}, args ...Params) error {
 	return o.Do("GET", nil, data, args...)
 }
 
+// Range get the object range content to the data given the first-byte-pos and the length,
+// returns the range-length and the instance-length.
+//
+// The range-length is less than or equal to the given length.
+// The first-byte-pos add the range-length equal the instance-length indicate EOF.
+//
+// The first optional Params is for Header, the second is for Query.
+//
+// The data's type must be
+// *[]byte, *os.File, *bytes.Buffer
+//
+// The last range must be given exact length or length <= 0,
+// because OSS not support last-byte-pos greater than or equal to the instance-length.
+//
+// Relevant documentation:
+//
+// https://docs.aliyun.com/#/pub/oss/api-reference/object&GetObject
+func (o Object) Range(first, length int64, data interface{}, args ...Params) (int64, int64, error) {
+	if !isGetDataType(data) {
+		return 0, 0, errDataTypeNotSupported
+	}
+
+	r := FormatRange(first, length)
+	if r == "" {
+		return 0, 0, errRangeInvalid
+	}
+
+	header, query := getHeaderQuery(args)
+	header.Set(HeaderRange, r)
+
+	res, err := o.GetResponse("GET", nil, header, query)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	err = newBody(res)
+	defer res.Body.Close()
+	if err == nil {
+		err = readError(res)
+	}
+	if err != nil {
+		return 0, 0, err
+	}
+
+	f, l, t, err := ParseContentRange(res.Header.Get(HeaderContentRange))
+	if err != nil {
+		return 0, 0, err
+	}
+
+	if f == -1 || l == -1 || t == -1 || f != first || (length > 0 && l > length) {
+		return 0, 0, ErrContentRangeCorrupt
+	}
+
+	if n, err := readBody(res.Body, data); err != nil {
+		return 0, 0, err
+	} else if n != l {
+		return 0, 0, ErrContentRangeCorrupt
+	}
+
+	return l, t, nil
+}
+
 // Append the data to the object content, also send the ACL if it is not the empty string,
 // returns ObjectNotAppendable Error if the object is not Appendable,
 // returns the next append position, the hash crc64ecma and the ETag if success.

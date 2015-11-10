@@ -4,7 +4,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"os"
 
@@ -23,42 +22,11 @@ func main() {
 	}
 	defer file.Close()
 
-	const size = 1 << 20 // 1M
-
-	header := oss.Params{}
-	next := 0
+	var first, length int64 = 0, 1 << 20 // 1M
 	for {
-		header.Set("Range", fmt.Sprintf("bytes=%d-%d", next, next+size))
-
-		res, err := object.GetResponse("GET", nil, header)
-		if err != nil { // or retry
-			log.Fatalln(err)
-		}
-
-		cr := res.Header.Get("Content-Range")
-
-		// whole file
-		if cr == "" {
-			if next == 0 && res.StatusCode == 200 {
-				err = oss.ReadBody(res, file)
-				if err != nil {
-					log.Fatalln(err)
-				}
-			} else {
-				log.Fatalln("range get failed")
-			}
-			break
-		}
-
-		var start, end, total int
-		_, err = fmt.Sscanf(cr, "bytes %d-%d/%d", start, end, total)
-		if !(err == nil && start == next && end <= next+size && start <= end && end < total) {
-			log.Fatalln("range get corrupt")
-		}
-
 		var data []byte
-		err = oss.ReadBody(res, data)
-		if err != nil {
+		rl, il, err := object.Range(first, length, &data)
+		if err != nil { // or retry
 			log.Fatalln(err)
 		}
 
@@ -67,11 +35,15 @@ func main() {
 			log.Fatalln(err)
 		}
 
-		next += end + 1
-		if next == total {
+		first += rl
+		if first == il {
 			break
-		} else if next > total {
-			log.Fatalln("no more range")
+		} else if first > il || length == 0 {
+			log.Fatalln("somthing wrong")
+		}
+
+		if first+length > il { // last range
+			length = 0
 		}
 	}
 }

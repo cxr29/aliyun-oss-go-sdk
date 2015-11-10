@@ -25,6 +25,7 @@ var (
 	errUploadIdRequired     = errors.New("upload id required")
 	errPartNumberInvalid    = errors.New("part number invalid")
 	errSourceObjectInvalid  = errors.New("source object invalid")
+	errRangeInvalid         = errors.New("range invalid")
 )
 
 // Service represents Aliyun Object Storage Service,
