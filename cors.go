@@ -53,7 +53,7 @@ func (b Bucket) DeleteCORS(args ...Params) error {
 	return b.Do("DELETE", "", nil, nil, header, query)
 }
 
-// Options the object and return the response header.
+// Options the object and returns the response header.
 //
 // The first optional Params is for Header, the second is for Query.
 //

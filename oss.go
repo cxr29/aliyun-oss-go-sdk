@@ -60,7 +60,7 @@ func GetDomain(location string, internal bool) (domain string) {
 
 // ReadBody reads the response body and stores the result in the value pointed to by v,
 //
-// When the status code is 3xx, 4xx or 5xx return the Error.
+// When the status code is 3xx, 4xx or 5xx returns the Error.
 //
 // If v is nil, the response body is discarded or, if v's type is not
 // *[]byte, *os.File and *bytes.Buffer,

@@ -16,7 +16,7 @@ type Object struct {
 
 // FullName returns the string "/BucketName/ObjectName".
 //
-// If the bucket name or the object name is invalid return the empty string.
+// If the bucket name or the object name is invalid returns the empty string.
 func (o Object) FullName() string {
 	if IsBucketName(o.Bucket.Name) && IsObjectName(o.Name) {
 		return "/" + o.Bucket.Name + "/" + o.Name
@@ -258,11 +258,9 @@ func (o Object) Delete(args ...Params) error {
 	return o.Do("DELETE", nil, nil, args...)
 }
 
-// Head the object returns the meta.
+// Head the object and returns the response header.
 //
 // The first optional Params is for Header, the second is for Query.
-//
-// Head the object and return the response header.
 //
 // Relevant documentation:
 //
@@ -277,6 +275,35 @@ func (o Object) Head(args ...Params) (http.Header, error) {
 		return nil, err
 	}
 	return res.Header, nil
+}
+
+// GetInfo returns the object info.
+//
+// The first optional Params is for Header, the second is for Query.
+func (o Object) GetInfo(args ...Params) (*GetObjectInfoResult, error) {
+	header, query := getHeaderQuery(args)
+
+	query.Set("objectInfo", "")
+
+	v := new(GetObjectInfoResult)
+
+	err := o.Do("GET", nil, v, header, query)
+	if err != nil {
+		return nil, err
+	}
+
+	return v, nil
+}
+
+// GetObjectInfoResult represents the object info result.
+type GetObjectInfoResult struct {
+	Bucket       string
+	Type         string
+	Key          string
+	ETag         string
+	ContentType  string `xml:"Content-Type"`
+	Size         int64
+	LastModified string // 2006-01-02T15:04:05.000Z
 }
 
 // PutACL change the object acl if it is the empty string.
@@ -295,7 +322,7 @@ func (o Object) PutACL(args ...Params) error {
 	return o.Do("PUT", nil, nil, header, query)
 }
 
-// GetACL returns the object ACL, if not set return "default".
+// GetACL returns the object ACL, if not set returns "default".
 //
 // The first optional Params is for Header, the second is for Query.
 //

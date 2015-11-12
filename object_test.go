@@ -6,9 +6,12 @@ import (
 	"bytes"
 	"io"
 	"io/ioutil"
+	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 )
 
 const HelloWorld = `// Copyright 2015 Chen Xianren. All rights reserved.
@@ -247,7 +250,7 @@ func TestObjectAppend(t *testing.T) {
 	fatal(t, o.Bucket.Delete())
 }
 
-func TestObjectHead(t *testing.T) {
+func TestObjectHeadAndGetInfo(t *testing.T) {
 	o := newObject()
 
 	fatal(t, o.Bucket.Put())
@@ -271,6 +274,16 @@ func TestObjectHead(t *testing.T) {
 	if HelloWorld != string(v) {
 		t.Fatal("expected HelloWorld")
 	}
+
+	info, err := o.GetInfo()
+	fatal(t, err)
+
+	equal(t, "info etag", h.Get("ETag"), info.ETag)
+	equal(t, "info size", h.Get("Content-Length"), strconv.FormatInt(info.Size, 10))
+	lm, err := time.Parse(http.TimeFormat, h.Get("Last-Modified"))
+	fatal(t, err)
+	equal(t, "info last modified", lm.Format("2006-01-02T15:04:05.000Z"), info.LastModified)
+	equal(t, "info content type", h.Get("Content-Type"), info.ContentType)
 
 	fatal(t, o.Delete())
 
