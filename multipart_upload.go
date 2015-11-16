@@ -75,8 +75,6 @@ func (o Object) UploadPart(partNumber int, uploadId string, data interface{}, ar
 // The first optional Params is for Header, the second is for Query.
 //
 // The partNumber must be gte 1 and lte 10000.
-// The data's type must be
-// []byte, *[]byte, *os.File, *bytes.Buffer, *bytes.Reader or *strings.Reader.
 //
 // Relevant documentation:
 //

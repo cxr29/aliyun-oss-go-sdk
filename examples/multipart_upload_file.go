@@ -32,16 +32,25 @@ func main() {
 
 	cmu := oss.CompleteMultipartUpload{}
 
+	data := make([]byte, 1<<20) // 1M
 	for i := 1; ; i++ {
-		data := make([]byte, 1<<20) // 1M
-		var etag string
-		n, err := file.Read(data)
-		if err == io.EOF {
-			break
-		} else if err == nil {
-			etag, err = object.UploadPart(i, imu.UploadId, data[:n])
+		n, err := file.Read(data[:])
+		if err == nil || err == io.EOF {
+			var e error
+			if n > 0 {
+				cmup := oss.CompleteMultipartUploadPart{PartNumber: i}
+				cmup.ETag, e = object.UploadPart(i, imu.UploadId, data[:n])
+				if e == nil {
+					cmu.Part = append(cmu.Part, cmup)
+				} // or retry
+			}
+			if err == io.EOF && e == nil {
+				break
+			} else {
+				err = e
+			}
 		}
-		if err != nil { // abort the multipart upload or retry
+		if err != nil { // abort the multipart upload
 			log.Println(err)
 			err = object.AbortMultipartUpload(imu.UploadId)
 			if err != nil {
@@ -49,7 +58,6 @@ func main() {
 			}
 			return
 		}
-		cmu.Part = append(cmu.Part, oss.CompleteMultipartUploadPart{i, etag})
 	}
 
 	// complete the multipart upload
