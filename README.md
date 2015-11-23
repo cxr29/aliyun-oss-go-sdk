@@ -1,4 +1,8 @@
 Aliyun OSS Go SDK
+=================
+
+[![GoDoc](https://godoc.org/github.com/cxr29/aliyun-oss-go-sdk?status.svg)](https://godoc.org/github.com/cxr29/aliyun-oss-go-sdk)
+[![Build Status](https://drone.io/github.com/cxr29/aliyun-oss-go-sdk/status.png)](https://drone.io/github.com/cxr29/aliyun-oss-go-sdk/latest)
 
 ### Feature
 - All OSS API
