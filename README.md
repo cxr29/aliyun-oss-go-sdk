@@ -9,14 +9,7 @@ Aliyun OSS Go SDK
 - ...
 
 ### Install
-```
-$ cd ${GOPATH}/src # change the GOPATH if required
-$ mkdir -p git.oschina.net/cxr29 && cd git.oschina.net/cxr29
-$ git clone https://git.oschina.net/cxr29/aliyun-oss-go-sdk.git
-$ go install git.oschina.net/cxr29/aliyun-oss-go-sdk
-```
-or
-```$ go get git.oschina.net/cxr29/aliyun-oss-go-sdk.git # it isn't working now```
+```$ go get github.com/cxr29/aliyun-oss-go-sdk```
 
 ### Usage
 ```
@@ -81,14 +74,14 @@ err = o.Delete()
 // initialize a Multipart Upload
 imu, err := o.InitiateMultipartUpload()
 
-cmu := CompleteMultipartUpload{}
+cmu := oss.CompleteMultipartUpload{}
 
 // upload a part
 etag, err := o.UploadPart(1, imu.UploadId, part)
-cmu.Part = append(cmu.Part, CompleteMultipartUploadPart{1, etag})
+cmu.Part = append(cmu.Part, oss.CompleteMultipartUploadPart{1, etag})
 // or upload a part copy from the source object
 cpr, err := o.UploadPartCopy(1, imu.UploadId, source)
-cmu.Part = append(cmu.Part, CompleteMultipartUploadPart{1, cpr.ETag})
+cmu.Part = append(cmu.Part, oss.CompleteMultipartUploadPart{1, cpr.ETag})
 
 // ...
 
@@ -100,7 +93,7 @@ err = o.AbortMultipartUpload(imu.UploadId)
 More see the examples.
 
 ### API Doc
-https://godoc.org/git.oschina.net/cxr29/aliyun-oss-go-sdk.git
+https://godoc.org/github.com/cxr29/aliyun-oss-go-sdk
 
 ### Test
 ```

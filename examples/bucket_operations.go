@@ -6,7 +6,7 @@ package main
 import (
 	"log"
 
-	"git.oschina.net/cxr29/aliyun-oss-go-sdk"
+	"github.com/cxr29/aliyun-oss-go-sdk"
 )
 
 func main() {

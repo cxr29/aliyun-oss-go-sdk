@@ -1,7 +1,7 @@
 // Copyright 2015 Chen Xianren. All rights reserved.
 
 // Package oss implements a library for Aliyun Object Storage Service.
-package oss
+package oss // import "github.com/cxr29/aliyun-oss-go-sdk"
 
 import (
 	"bytes"
